@@ -1,8 +1,33 @@
 #include "../net.hpp"
 
+void webserver::Server::ClientInfo(char* host, char* service)
+{
+
+	if (getnameinfo((sockaddr*)&client_addr, sizeof(client_addr),
+		host, NI_MAXHOST,
+		service, NI_MAXSERV, 0) == 0) {
+
+		std::cout << host << " connected on port " << service << std::endl;
+
+	}
+	else {
+		inet_ntop(AF_INET, &client_addr.sin_addr, host, NI_MAXHOST);
+
+		std::cout << host << " connected on port " <<
+			ntohs(client_addr.sin_port) << std::endl;
+	}
+	
+}
+
 void webserver::Server::stop()
 {
-	closesocket(client_sock);
+
+	if (server_sock != INVALID_SOCKET)
+	{
+		closesocket(server_sock);
+		closesocket(client_sock);
+	}
+
 	WSACleanup();
 }
 
@@ -27,7 +52,7 @@ void webserver::Server::BindandListen()
 
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_addr.s_addr = INADDR_ANY;
-	server_addr.sin_port = htons(8080);
+	server_addr.sin_port = htons(PORT);
 
 	if (bind(server_sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
 		std::cerr << "Bind failed with error code: " << WSAGetLastError();
@@ -56,27 +81,14 @@ void webserver::Server::HandleClient()
 		std::cerr << "Error! Can't accept connection! " << WSAGetLastError() << std::endl;
 		exit(EXIT_FAILURE);
 	}
+	else
+	{
 
-	std::cout << "Client connected!" << std::endl;
+		char host[NI_MAXHOST];
+		char service[NI_MAXSERV];
 
-	char host[NI_MAXHOST];      // host is the client's remote name
-	char service[NI_MAXSERV];   // service is the port client is connected on
+		ClientInfo(host, service);
 
-	memset(host, 0, NI_MAXHOST);
-	memset(service, 0, NI_MAXSERV);
-
-	if (getnameinfo((sockaddr*)&client_addr, sizeof(client_addr),
-		host, NI_MAXHOST,
-		service, NI_MAXSERV, 0) == 0) {
-
-		std::cout << host << " connected on port " << service << std::endl;
-	
-	}
-	else {
-		inet_ntop(AF_INET, &client_addr.sin_addr, host, NI_MAXHOST);
-
-		std::cout << host << " connected on port " <<
-			ntohs(client_addr.sin_port) << std::endl;
 	}
 
 	// scope to handle messages between server and client
@@ -84,23 +96,42 @@ void webserver::Server::HandleClient()
 	char buffer[MAX_BUFFER_LEN];
 
 	while (true) {
-		memset(&buffer, 0, sizeof(buffer));
-
+		memset(buffer,0 ,sizeof(buffer));
 		int bytes_recv = recv(client_sock, buffer, sizeof(buffer), 0);
-		if (bytes_recv == SOCKET_ERROR) {
-			std::cerr << "Error in recv(). Quitting" << std::endl;
-			break;
+
+		if (bytes_recv > 0) {
+			std::string recv_msg(buffer, bytes_recv);
+			std::cout << "Client: " << recv_msg << std::endl;
+
+			if (recv_msg == "exit") {
+				std::cout << "Client requested to close connection." << std::endl;
+				break;
+			}
+
+			// echo back
+			send(client_sock, buffer, bytes_recv, 0);
+			
+			// to send custom message from server to client uncomment below
+			//std::string msg;
+			//std::getline(std::cin, msg);
+			//send(client_sock, msg.c_str(), msg.size(), 0);
 		}
-		if (bytes_recv == 0) {
-			std::cout << "Client disconnected " << std::endl;
+
+		else if (bytes_recv == 0)
+		{
+			std::cout << "Connection closed by client." << std::endl;
 			break;
 		}
 
-		std::cout << "Received: " << buffer << std::endl;
-		send(client_sock, buffer, bytes_recv + 1, 0);
-
+		else
+		{
+			std::cerr << "Receive failed." << std::endl;
+			break;
+		}
 	}
 
+	closesocket(client_sock);
+	std::cout << "Connection with client closed." << std::endl;
 }
 
 int webserver::Server::Run()
@@ -115,7 +146,6 @@ int webserver::Server::Run()
 	catch (const std::exception& e) {
 		std::cerr << "Exception: " << e.what() << std::endl;
 	}
-
 
 	return 0;
 }

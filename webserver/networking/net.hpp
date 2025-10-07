@@ -49,9 +49,14 @@ namespace webserver
 
 	public:
 
-
+		bool creation();
+		int connect_to_server(const char* host, int port);
 
 	private:
+
+		WSADATA wsa;
+		SOCKET sock_client;
+		struct sockaddr_in addr_client;
 
 
 

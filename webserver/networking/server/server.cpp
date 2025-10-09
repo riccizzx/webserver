@@ -1,4 +1,5 @@
 #include "../net.hpp"
+#include "detect.hpp"
 
 void webserver::Server::ClientInfo(char* host, char* service)
 {
@@ -19,11 +20,9 @@ void webserver::Server::ClientInfo(char* host, char* service)
 	
 }
 
-void webserver::Server::stop()
-{
+void webserver::Server::stop(){
 
-	if (server_sock != INVALID_SOCKET)
-	{
+	if (server_sock != INVALID_SOCKET){
 		closesocket(server_sock);
 		closesocket(client_sock);
 	}
@@ -31,8 +30,7 @@ void webserver::Server::stop()
 	WSACleanup();
 }
 
-void webserver::Server::Init()
-{
+void webserver::Server::Init(){
 
 	if (WSAStartup(MAKEWORD(2, 2), &ws) != 0) {
 		std::cerr << "Failed. Error Code: " << WSAGetLastError();
@@ -47,12 +45,11 @@ void webserver::Server::Init()
 
 }
 
-void webserver::Server::BindandListen()
-{
+void webserver::Server::BindandListen(){
 
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_addr.s_addr = INADDR_ANY;
-	server_addr.sin_port = htons(PORT);
+	server_addr.sin_port = htons(port);
 
 	if (bind(server_sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
 		std::cerr << "Bind failed with error code: " << WSAGetLastError();
@@ -64,25 +61,23 @@ void webserver::Server::BindandListen()
 		exit(EXIT_FAILURE);
 	}
 	
-	else
-	
-	{
+	else{
 		std::cout << "Socket listening in PORT: 9909" << std::endl;
 	}
 
 }
 
-void webserver::Server::HandleClient()
-{
+void webserver::Server::HandleClient(){
+
+	char buffer[MAX_BUFFER_LEN]; // buffer for transfer data with client
+	int client_len = sizeof(client_addr); 
 
 	client_sock = accept(server_sock, (sockaddr*)&client_addr, &client_len);
 	
 	if (client_sock == INVALID_SOCKET) {
 		std::cerr << "Error! Can't accept connection! " << WSAGetLastError() << std::endl;
 		exit(EXIT_FAILURE);
-	}
-	else
-	{
+	}else{
 
 		char host[NI_MAXHOST];
 		char service[NI_MAXSERV];
@@ -93,18 +88,18 @@ void webserver::Server::HandleClient()
 
 	// scope to handle messages between server and client
 
-	char buffer[MAX_BUFFER_LEN];
-
 	while (true) {
 		memset(buffer,0 ,sizeof(buffer));
 		int bytes_recv = recv(client_sock, buffer, sizeof(buffer), 0);
 
+
+
 		if (bytes_recv > 0) {
 			std::string recv_msg(buffer, bytes_recv);
-			std::cout << "Client: " << recv_msg << std::endl;
+			printf("Client: ", recv_msg);
 
 			if (recv_msg == "exit") {
-				std::cout << "Client requested to close connection." << std::endl;
+				printf( "Client requested to close connection.\n");
 				break;
 			}
 
@@ -117,25 +112,27 @@ void webserver::Server::HandleClient()
 			//send(client_sock, msg.c_str(), msg.size(), 0);
 		}
 
-		else if (bytes_recv == 0)
+		std::string printable = escapeHex(buffer, bytes_recv);
+		printf("Client: ", printable);
+
+		if (bytes_recv == 0)
 		{
-			std::cout << "Connection closed by client." << std::endl;
+			printf("Connection closing...\n");
 			break;
 		}
-
 		else
 		{
-			std::cerr << "Receive failed." << std::endl;
+			printf("recv failed: %d\n", WSAGetLastError());
 			break;
 		}
 	}
 
 	closesocket(client_sock);
-	std::cout << "Connection with client closed." << std::endl;
+	printf("Connection clossed! \n");
 }
 
-int webserver::Server::Run()
-{
+int webserver::Server::Run(){
+	
 	try {
 		webserver::Server sv;
 		sv.Init();

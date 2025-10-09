@@ -3,7 +3,7 @@
 #
 
 # Add source to this project's executable.
-add_executable (webserver "webserver.cpp" "webserver.h" "networking/server/server.cpp" "networking/client/client.cpp")
+add_executable (webserver "webserver.cpp" "webserver.h" "networking/server/server.cpp" "networking/client/client.cpp" "networking/server/detect.cpp")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET webserver PROPERTY CXX_STANDARD 20)

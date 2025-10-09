@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string.h>
 #include <string>
+#include "algorithm"
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -11,13 +12,11 @@
 #pragma comment(lib, "ws2_32.lib")
 
 #define MAX_BUFFER_LEN 1024
-#define PORT 9909
+const int port = 9909;
 
-namespace webserver
-{
+namespace webserver{
 
-	class Server
-	{
+	class Server{
 
 	public:
 
@@ -39,13 +38,11 @@ namespace webserver
 		// client variables
 		sockaddr_in client_addr;
 		SOCKET client_sock;
-		int client_len = sizeof(client_addr);
 
 	};
 
 
-	class Client
-	{
+	class Client{
 
 	public:
 
@@ -58,10 +55,7 @@ namespace webserver
 		SOCKET sock_client;
 		struct sockaddr_in addr_client;
 
-
-
 	};
-
 
 }
 

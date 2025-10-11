@@ -1,5 +1,4 @@
 #include "../net.hpp"
-#include "detect.hpp"
 
 void webserver::Server::ClientInfo(char* host, char* service)
 {
@@ -92,14 +91,13 @@ void webserver::Server::HandleClient(){
 		memset(buffer,0 ,sizeof(buffer));
 		int bytes_recv = recv(client_sock, buffer, sizeof(buffer), 0);
 
-
-
 		if (bytes_recv > 0) {
 			std::string recv_msg(buffer, bytes_recv);
-			printf("Client: ", recv_msg);
+			std::cout << "Client: " << recv_msg << std::endl;
+			//printf("Client: ", recv_msg);
 
 			if (recv_msg == "exit") {
-				printf( "Client requested to close connection.\n");
+				std::cout << "Client requested to quit!" << std::endl;
 				break;
 			}
 
@@ -112,23 +110,20 @@ void webserver::Server::HandleClient(){
 			//send(client_sock, msg.c_str(), msg.size(), 0);
 		}
 
-		std::string printable = escapeHex(buffer, bytes_recv);
-		printf("Client: ", printable);
-
 		if (bytes_recv == 0)
 		{
-			printf("Connection closing...\n");
+			std::cout << "Connection closed" << std::endl;
 			break;
 		}
 		else
 		{
-			printf("recv failed: %d\n", WSAGetLastError());
+			std::cout << "recv failed: " << WSAGetLastError() << std::endl;
 			break;
 		}
 	}
 
 	closesocket(client_sock);
-	printf("Connection clossed! \n");
+	std::cout << "Client disconnected." << std::endl;
 }
 
 int webserver::Server::Run(){

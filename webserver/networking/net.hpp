@@ -48,6 +48,8 @@ namespace webserver{
 
 		bool creation();
 		int connect_to_server(const char* host, int port);
+		void stop();
+		int send_data(const char* data);
 
 	private:
 
